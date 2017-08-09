@@ -18,7 +18,7 @@
 #define IN_SIZE		WIDTH*HEIGHT+BIAS	//Input Size Default
 #define OUT_SIZE	10					//Output Size Default
 #define	HL_SIZE		128					//Hidden Layer Size Default
-#define DEBUG_MODE	false				//(debug mode should be for each function)
+#define DEBUG_MODE	false				//general debug mode for init and load input
 #define FFDEBUG		false				//for feedfwd debugging report generation
 #define BPDEBUG		false				//for backPropagationk debugging
 #define	TDEBUG		false				//for neural network test debugging

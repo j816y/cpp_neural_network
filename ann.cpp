@@ -60,34 +60,37 @@ void Ann::initAnn(){
 	expectedValue.resize(OUT_SIZE);
 	outputVector.resize(OUT_SIZE);
 	inputVector[IN_SIZE-1] = BIAS;
-
+	
 	int nLayers = numOfLayers - 1;		//number of hidden layers + output layer
 	//weight initialization
 	(*weightPtr).resize(nLayers);
 	(*deltaPtr).resize(nLayers);
 	(*thetaPtr).resize(nLayers);
-	(*layerOutPtr).resize(nLayers);
-    for (int i = 0; i < nLayers; i++){
-        //weight stored in the following format: w[layer_index][neuron_index][input_index]
-        (*weightPtr)[i].resize(numOfNeurons[i+1]);
-        (*deltaPtr)[i].resize(numOfNeurons[i+1]);
-
-        for (int j = 0; j < numOfNeurons[i+1]; j++){	//number of neurons for the next layer (where the computation happens)
-        	(*thetaPtr)[i].push_back(0);
-        	(*layerOutPtr)[i].push_back(0);
-            for (int k = 0; k < numOfNeurons[i]; k++){	//number of neurons for current layer (where the input/intermediate output generates)
+	for (int i = 0; i < nLayers; i++){
+		//weight stored in the following format: w[layer_index][neuron_index][input_index]
+		(*weightPtr)[i].resize(numOfNeurons[i+1]);
+		(*deltaPtr)[i].resize(numOfNeurons[i+1]);
+		
+		for (int j = 0; j < numOfNeurons[i+1]; j++){	//number of neurons for the next layer (where the computation happens)
+			(*thetaPtr)[i].push_back(0);
+			for (int k = 0; k < numOfNeurons[i]; k++){	//number of neurons for current layer (where the input/intermediate output generates)
 				bool sign = (bool)(rand() % 2);
 				(*weightPtr)[i][j].push_back((double)(rand() % 6) / 10.0);
 				if(sign)
 					(*weightPtr)[i][j][k] = -(*weightPtr)[i][j][k];
-                (*deltaPtr)[i][j].push_back(0);
-                if(DEBUG_MODE)
-                	//set all weights as the neuron index
-                	//for instance, every weight goes to neuron 1 is 1
-                	(*weightPtr)[i][j][k] = j + 1;
-            }
-        }
-    }
+				(*deltaPtr)[i][j].push_back(0);
+				if(DEBUG_MODE)
+					//set all weights as the neuron index
+					//for instance, every weight goes to neuron 1 is 1
+					(*weightPtr)[i][j][k] = j + 1;
+			}
+		}
+	}
+	
+	(*layerOutPtr).resize(nLayers+1);	//the first layer is input, the last layer is output
+	for (int i = 0; i <= nLayers; i++){
+		(*layerOutPtr)[i].resize(numOfNeurons[i]);
+	}
     
     if(DEBUG_MODE){
     	for (int i = 0; i < (*weightPtr).size(); i++){
@@ -170,11 +173,12 @@ void Ann::loadInput(){
 }
 
 void Ann::feedForward(){
-	std::vector<double> tempIn;	//an intermediate input for each layer
-	std::vector<double> tempOut;	//an intermediate output for each layer
+	std::vector<double> tempIn;	//intermediate inputs for each layer
+	std::vector<double> tempOut;	//intermediate outputs for each layer
 	
 	tempIn.resize((*inputPtr).size());
 	tempIn = (*inputPtr);
+	layerOut[0] = tempIn;
 	
 	int nLayers = (*weightPtr).size();		//number of hidden layers + output layer
 	for (int i = 0; i < nLayers; i++) {
@@ -216,7 +220,7 @@ void Ann::feedForward(){
 		}
 		tempIn.resize(tempOut.size());
 		tempIn = tempOut;	//the intermediate output becomes an input for next layer
-		layerOut[i] = tempOut;
+		layerOut[i+1] = tempOut;
 	}
 	(*outputPtr) = tempOut;
 }
@@ -224,76 +228,87 @@ void Ann::feedForward(){
 void Ann::backPropagation(){
 	//----------------- Hard coded version for debugging -----------------------
 	//note: instead of i j k, use a more meaningful temp_variable since it gets very complicated.
-	double sum;
-	for (int i = 0; i < OUT_SIZE; i++){
-		(*thetaPtr)[1][i] = layerOut[1][i] * (1-layerOut[1][i]) * (expectedValue[i]-layerOut[1][i]);
-	}
-	for (int i = 0; i < OUT_SIZE; i++){
-		for (int j = 0; j < 128; j++){
-			//layerOut[0][j] is the output of hidden layer, size should be 128
-			(*deltaPtr)[1][i][j] = (learningRate * (*thetaPtr)[1][i] * layerOut[0][j]) + (momentum * (*deltaPtr)[1][i][j]);
-			(*weightPtr)[1][i][j] += (*deltaPtr)[1][i][j];
-		}
-	}
-
-	//the reverse of j and i needs some graphic explanation
-	//i is the one needed to be repeating
-	for (int j = 0; j < 128; j++){
-		sum = 0.0;
-		for (int i = 0; i < OUT_SIZE; i++){
-			sum += (*weightPtr)[1][i][j] * (*thetaPtr)[1][i];
-		}
-		(*thetaPtr)[0][j] = layerOut[0][j] * (1-layerOut[0][j]) * sum;
-	}
-
-	for (int i = 0; i < 128; i++){
-		for (int j = 0; j < IN_SIZE; j++){
-			(*deltaPtr)[0][i][j] = (learningRate * (*thetaPtr)[0][i] * (*inputPtr)[j]) + (momentum * (*deltaPtr)[0][i][j]);
-			(*weightPtr)[0][i][j] += (*deltaPtr)[0][i][j];
-		}
-	}
-	
-	
-	//------------------- A generic version that doesn't learn -----------------
-	
-	
 	// double sum;
-	// int nLayers = (*weightPtr).size()-1;	//number of sets of weight matrix between layers
-	//calculate theta from output to the last hidden layer
-	for (int oSize = 0; oSize < OUT_SIZE; oSize++)
-		(*thetaPtr).back()[oSize] = (*layerOutPtr).back()[oSize] * (1 - (*layerOutPtr).back()[oSize]) * (expectedValue[oSize] - (*layerOutPtr).back()[oSize]);	
+	// for (int i = 0; i < OUT_SIZE; i++){
+	// 	(*thetaPtr)[1][i] = layerOut[1][i] * (1-layerOut[1][i]) * (expectedValue[i]-layerOut[1][i]);
+	// }
+	// for (int i = 0; i < OUT_SIZE; i++){
+	// 	for (int j = 0; j < 128; j++){
+	// 		//layerOut[0][j] is the output of hidden layer, size should be 128
+	// 		(*deltaPtr)[1][i][j] = (learningRate * (*thetaPtr)[1][i] * layerOut[0][j]) + (momentum * (*deltaPtr)[1][i][j]);
+	// 		(*weightPtr)[1][i][j] += (*deltaPtr)[1][i][j];
+	// 	}
+	// }
+
+	// //the reverse of j and i needs some graphic explanation
+	// //i is the one needed to be repeating
+	// for (int j = 0; j < 128; j++){
+	// 	sum = 0.0;
+	// 	for (int i = 0; i < OUT_SIZE; i++){
+	// 		sum += (*weightPtr)[1][i][j] * (*thetaPtr)[1][i];
+	// 	}
+	// 	(*thetaPtr)[0][j] = layerOut[0][j] * (1-layerOut[0][j]) * sum;
+	// }
+
+	// for (int i = 0; i < 128; i++){
+	// 	for (int j = 0; j < IN_SIZE; j++){
+	// 		(*deltaPtr)[0][i][j] = (learningRate * (*thetaPtr)[0][i] * (*inputPtr)[j]) + (momentum * (*deltaPtr)[0][i][j]);
+	// 		(*weightPtr)[0][i][j] += (*deltaPtr)[0][i][j];
+	// 	}
+	// }
 	
-	for (int nLayers = (numOfNeurons.size()-1); nLayers >= 0; nLayers--){	//number of layers, indexs starts from the output layer
-		if(BPDEBUG)
+	
+	//------------------- Configurable Version -----------------
+	double sum;
+	//number of layers, indexs starts from the output layer to the first hidden layer
+	for (int nLayers = (numOfNeurons.size()-1); nLayers > 0; nLayers--){
+		if(BPDEBUG){
 			std::cout << "Layer:	" << nLayers << std::endl;
-		for (int nNeurons = 0; nNeurons < numOfNeurons[nLayers]; nNeurons++){	//number of neurons in each layer
+			std::cout << "Neurons:	" << numOfNeurons[nLayers] << std::endl;
+		}
+		//theta calculation
+		if (nLayers == (numOfNeurons.size()-1)){
+			//from output to the last hidden layer
+			for (int oSize = 0; oSize < OUT_SIZE; oSize++){
+				if(BPDEBUG){
+					std::cout << "(*thetaPtr)[" << nLayers-1 << "][" << oSize << "] = (*layerOutPtr)[" << nLayers << "][" << oSize << "] * (1 - (*layerOutPtr)[" << nLayers << "][" << oSize << "]) * (expectedValue[" << oSize << "] - (*layerOutPtr)[" << nLayers << "][" << oSize << "]);\n";
+				}
+				(*thetaPtr)[nLayers-1][oSize] = (*layerOutPtr)[nLayers][oSize] * (1 - (*layerOutPtr)[nLayers][oSize]) * (expectedValue[oSize] - (*layerOutPtr)[nLayers][oSize]);
+			}
 			if(BPDEBUG)
-				std::cout << "Neurons:	" << nNeurons << std::endl;
+				getchar();
+		}
+		else{
+			//for rest of the hidden layers
+			//to calculate theta, the middle index (j) in weight[i][j][k] needs to be repeated for every k. <~ Very confusing, see document for explanation
+			for (int numIn = 0; numIn < numOfNeurons[nLayers]; numIn++){
+				sum = 0;
+				for (int numOut = 0; numOut < numOfNeurons[nLayers+1]; numOut++){
+					if(BPDEBUG){
+						std::cout << "sum += (*weightPtr)[" << nLayers << "][" << numOut << "][" << numIn << "] * (*thetaPtr)[" << nLayers << "][" << numOut << "];\n";
+					}
+					sum += (*weightPtr)[nLayers][numOut][numIn] * (*thetaPtr)[nLayers][numOut];
+				}
+				(*thetaPtr)[nLayers-1][numIn] = (*layerOutPtr)[nLayers][numIn] * (1-(*layerOutPtr)[nLayers][numIn]) * sum;
+			}
+			if(BPDEBUG)
+				getchar();
+		}
+		
+		//delta_weight calculation for each layer
+		for (int numOut = 0; numOut < numOfNeurons[nLayers];numOut++){
+			for (int numIn = 0; numIn < numOfNeurons[nLayers-1];numIn++){
+				if(BPDEBUG){
+					std::cout << "(*deltaPtr)[" << nLayers-1 << "][" << numOut << "][" << numIn << "] = (learningRate * (*thetaPtr)[" << nLayers-1 << "][" << numOut << "] * layerOut[" << numIn << "]) + (momentum * (*deltaPtr)[" << nLayers-1 << "][" << numOut << "][" << numIn << "]);\n";
+					std::cout << "(*weightPtr)[" << nLayers-1 << "][" << numOut << "][" << numIn << "] += (*deltaPtr)[" << nLayers-1 << "][" << numOut << "][" << numIn << "];\n";
+					}
+				(*deltaPtr)[nLayers-1][numOut][numIn] = (learningRate * (*thetaPtr)[nLayers-1][numOut] * layerOut[nLayers-1][numIn]) + (momentum * (*deltaPtr)[nLayers-1][numOut][numIn]);
+				(*weightPtr)[nLayers-1][numOut][numIn] += (*deltaPtr)[nLayers-1][numOut][numIn];
+			}
+			if(BPDEBUG)
+				getchar();
 		}
 	}
-	
-	// for (int i = 0; i < (*weightPtr)[outInd].size(); i++){
-	// 	sum = 0;
-	// 	for (int j = 0; j < (*weightPtr)[outInd][i].size(); j++){
-	// 		sum += (*weightPtr)[outInd][i][j] * (*thetaPtr)[outInd][j];
-	// 	}
-	// 	(*thetaPtr)[outInd-1][i] = (*layerOutPtr)[outInd-1][i] * (1-(*layerOutPtr)[outInd-1][i]) * sum;
-	// }
-	
-	// //back propagation from hidden layers to input
-	// for (int i = nLayers-1; i >= 0; i--){
-	// 	int nNeurons = (*weightPtr)[i].size();	//number of neurons in each layer
-	// 	for (int j = 0; j < nNeurons; j++){
-	// 		int nInputs = (*weightPtr)[i][j].size();
-	// 		for (int k = 0; k < (nInputs); k++){
-	// 			if(i == 0)
-	// 				(*deltaPtr)[i][j][k] = learningRate * (*thetaPtr)[i][j] * (*inputPtr)[j] + (momentum * (*deltaPtr)[i][j][k]);
-	// 			else
-	// 				(*deltaPtr)[i][j][k] = learningRate * (*thetaPtr)[i][j] * (*layerOutPtr)[i][j] + (momentum * (*deltaPtr)[i][j][k]);
-	// 			(*weightPtr)[i][j][k] += (*deltaPtr)[i][j][k];
-	// 		}
-	// 	}
-	// }
 }
 
 int Ann::learning(){
@@ -308,7 +323,6 @@ int Ann::learning(){
 	}
 	//train until it reaches maximum epochs or error is lower than the threshold
 	while(nIterations < epochs){
-	//while(squareError() > epsilon){
 		nIterations++;			
 		feedForward();
 		backPropagation();
@@ -333,7 +347,7 @@ double Ann::squareError(){
 }
 
 void Ann::trainReport(int sample, int nIterations, double error){
-	report << "Sample " << sample+1 << ":	No. iterations:	" << nIterations << ".	Error = " << error << std::endl;
+	report << "Sample " << sample+1 << ":		No. iterations:		" << nIterations << ".		Error = " << error << std::endl;
 }
 
 void Ann::writeWeight(std::string file_name) {
