@@ -380,6 +380,7 @@ void Ann::summary() {
 		std::cout << "True" << std::endl;
 	else
 		std::cout << "False" << std::endl << std::endl;
+	std::cout << "No. of layers:		" << numOfLayers << std::endl;
 	std::cout << "No. input neurons:	" << IN_SIZE << std::endl;
 	for (int i = 1; i < numOfLayers-1; i++)	//1st layer is input and last layer is output
 		std::cout << "No. hidden neurons:	" << numOfNeurons[i] << std::endl;
