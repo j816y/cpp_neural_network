@@ -5,34 +5,36 @@ int main(){
     std::string defaultSetting;
     int userInput;
     
-    //default is a neural network with single hidden layer and 128 neurons
     bool training = true;
     int numOfLayers;
     std::vector<int> numOfNeurons;
     
+    //default is a neural network with single hidden layer and 128 neurons
+    numOfLayers = 3;
+    numOfNeurons.resize(numOfLayers);
+    numOfNeurons[0] = IN_SIZE;
+    numOfNeurons[1] = HL_SIZE;
+    numOfNeurons[2] = OUT_SIZE;
+    
+    std::cout << "**************************************************" << std::endl;
+    std::cout << "**************** Default Setting *****************" << std::endl;
+    std::cout << "**************************************************" << std::endl;
+    std::cout<< "Number of Layers: " << numOfLayers << std::endl;
+    for (int i = 0; i < numOfLayers; i++)
+        std::cout<< "Number of Neurons in Layer " << i+1 << ": " << numOfNeurons[i] << std::endl;
     std::cout<< "Use the default setting? (Y/N):";
     std::cin >> defaultSetting;
     
     if (defaultSetting == "Y" || defaultSetting == "y"){
-        numOfLayers = 3;
-        numOfNeurons.resize(numOfLayers);
-        numOfNeurons[0] = IN_SIZE;
-        numOfNeurons[1] = HL_SIZE;
-        numOfNeurons[2] = OUT_SIZE;
-        
-        std::cout << "**************************************************" << std::endl;
-        std::cout << "**************** Default Setting *****************" << std::endl;
-        std::cout << "**************************************************" << std::endl;
-        std::cout<< "Number of Layers: " << numOfLayers << std::endl;
-        for (int i = 0; i < numOfLayers; i++){
-            std::cout<< "Number of Neurons in Layer " << i+1 << ": " << numOfNeurons[i] << std::endl;
-        }
         std::cout << "Default setting chose. Press any key to continue.\n" << std::endl;
         getchar();
     }
     else{
+        numOfNeurons.clear();
+        
         std::cout<< "Please enter number of layers (input layer included): ";
         std::cin >> numOfLayers;
+        numOfNeurons.resize(numOfLayers);
         for (int i = 1; i <= numOfLayers; i++){
             std::cout<< "Please enter number of neurons for layer " << i << ": ";
             std::cin >> userInput;
