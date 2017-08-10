@@ -34,11 +34,14 @@ int main(){
         
         std::cout<< "Please enter number of layers (input layer included): ";
         std::cin >> numOfLayers;
-        numOfNeurons.resize(numOfLayers);
         for (int i = 1; i <= numOfLayers; i++){
             std::cout<< "Please enter number of neurons for layer " << i << ": ";
             std::cin >> userInput;
             numOfNeurons.push_back(userInput);
+        }
+        
+        for (int i = 1; i <= numOfNeurons.size(); i++){
+            std::cout << "Testing:  " << numOfNeurons[i] << std::endl;
         }
     }
     
