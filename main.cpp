@@ -2,12 +2,14 @@
 
 int main(){
     //======================Set Network Size=============================
+    std::ofstream config;       //store network size for testing purpose
+    const std::string config_file = "config.dat";
     std::string defaultSetting;
     int userInput;
-    
     bool training = true;
     int numOfLayers;
     std::vector<int> numOfNeurons;
+    DataSet dataset = MNIST;
     
     //default is a neural network with single hidden layer and 128 neurons
     numOfLayers = 3;
@@ -39,22 +41,25 @@ int main(){
             std::cin >> userInput;
             numOfNeurons.push_back(userInput);
         }
-        
-        for (int i = 1; i <= numOfNeurons.size(); i++){
-            std::cout << "Testing:  " << numOfNeurons[i] << std::endl;
-        }
     }
+    
+    //write setting to config file
+    config.open(config_file.c_str(), std::ios::out);
+    config << numOfLayers << std::endl;
+    for (int i = 0; i < numOfNeurons.size(); i++)
+        config << numOfNeurons[i] << std::endl;
+    config.close();
     
     //============Create Network====================
 	Ann training_nn(sigmoidFunct, numOfLayers, numOfNeurons, training);
     //Ann training_nn (reluFunct, numOfLayers, numOfNeurons, training);
+    training_nn.chooseDataset(dataset);
+    training_nn.initAnn(); 
 	training_nn.summary();        //print basic network information
 	training_nn.readHeader();   //get rid of header from image file (for MNIST)
-	training_nn.initAnn();      
-	
+	int SampleSize = training_nn.getTrainSize();
 	//================Traing========================
-	//go through the entire dataset, for MNIST is 60000
-    for (int sample = 0; sample < trainSize; sample++) {
+    for (int sample = 0; sample < SampleSize; sample++) {
         std::cout << "Sample " << sample+1 << ": ";
         int nIterations = 0;
         double error = 0;
@@ -70,12 +75,12 @@ int main(){
         // Save the current weight matrix every 100 samples
         // In case of termination
         if (sample != 0 && sample % 100 == 0) {
-            std::cout << "Saving weight to " << weight_data << ".\n";
-            training_nn.writeWeight(weight_data);
+            std::cout << "Saving weight matrix.\n";
+            training_nn.writeWeight();
         }
     }
     //save final network
-    training_nn.writeWeight(weight_data);
+    training_nn.writeWeight();
     std::cout << "Training Completed.\n";
     return 0;
 }

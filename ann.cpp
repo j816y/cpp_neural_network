@@ -1,5 +1,17 @@
 #include "ann.h"
 
+std::vector<int> readConfig(std::string fileName){
+	std::vector<int> configValue;
+	std::ifstream config;
+	config.open(fileName.c_str(), std::ios::out);
+	//read config file
+	int value;
+	while (config >> value) {
+        configValue.push_back(value);
+    }
+	return configValue;
+}
+
 //==================== Activation functions ======================
 double Ann::sigmoid(double input){
 	return 1.0/(1.0+exp(-input));
@@ -32,6 +44,13 @@ double Ann::activation(ActType actType, double input){
 	}
 }
 
+int Ann::getTrainSize(){
+	return trainSize;
+}
+int Ann::getTestSize(){
+	return testSize;
+}
+
 std::vector<double>* Ann::getInputPtr(){
 	return inputPtr;
 }
@@ -40,6 +59,18 @@ std::vector<double>* Ann::getOutputPtr(){
 }
 std::vector<std::vector<std::vector<double> > >* Ann::getWeightPtr(){
 	return weightPtr;
+}
+
+void Ann::chooseDataset(DataSet data){
+	switch(data){
+		case 0:	//MNIST
+			train_image = "mnist/train-images-idx3-ubyte";
+			train_label = "mnist/train-labels-idx1-ubyte";
+			trainSize = 60000;
+			test_image = "mnist/t10k-images-idx3-ubyte";
+			test_label = "mnist/t10k-labels-idx1-ubyte";
+			testSize = 10000;
+	}
 }
 
 void Ann::readHeader(){
@@ -55,7 +86,18 @@ void Ann::readHeader(){
 
 void Ann::initAnn(){
 	srand(time(NULL));
-	
+
+	if(training){
+		report.open(train_report.c_str(), std::ios::out);
+		image.open(train_image.c_str(), std::ios::in | std::ios::binary); // Binary image file
+		label.open(train_label.c_str(), std::ios::in | std::ios::binary); // Binary label file
+	}
+	else{
+		report.open(test_report.c_str(), std::ios::out);
+		image.open(test_image.c_str(), std::ios::in | std::ios::binary); // Binary image file
+		label.open(test_label.c_str(), std::ios::in | std::ios::binary); // Binary label file	
+	}
+
 	inputVector.resize(IN_SIZE);
 	expectedValue.resize(OUT_SIZE);
 	outputVector.resize(OUT_SIZE);
@@ -226,39 +268,6 @@ void Ann::feedForward(){
 }
 
 void Ann::backPropagation(){
-	//----------------- Hard coded version for debugging -----------------------
-	//note: instead of i j k, use a more meaningful temp_variable since it gets very complicated.
-	// double sum;
-	// for (int i = 0; i < OUT_SIZE; i++){
-	// 	(*thetaPtr)[1][i] = layerOut[1][i] * (1-layerOut[1][i]) * (expectedValue[i]-layerOut[1][i]);
-	// }
-	// for (int i = 0; i < OUT_SIZE; i++){
-	// 	for (int j = 0; j < 128; j++){
-	// 		//layerOut[0][j] is the output of hidden layer, size should be 128
-	// 		(*deltaPtr)[1][i][j] = (learningRate * (*thetaPtr)[1][i] * layerOut[0][j]) + (momentum * (*deltaPtr)[1][i][j]);
-	// 		(*weightPtr)[1][i][j] += (*deltaPtr)[1][i][j];
-	// 	}
-	// }
-
-	// //the reverse of j and i needs some graphic explanation
-	// //i is the one needed to be repeating
-	// for (int j = 0; j < 128; j++){
-	// 	sum = 0.0;
-	// 	for (int i = 0; i < OUT_SIZE; i++){
-	// 		sum += (*weightPtr)[1][i][j] * (*thetaPtr)[1][i];
-	// 	}
-	// 	(*thetaPtr)[0][j] = layerOut[0][j] * (1-layerOut[0][j]) * sum;
-	// }
-
-	// for (int i = 0; i < 128; i++){
-	// 	for (int j = 0; j < IN_SIZE; j++){
-	// 		(*deltaPtr)[0][i][j] = (learningRate * (*thetaPtr)[0][i] * (*inputPtr)[j]) + (momentum * (*deltaPtr)[0][i][j]);
-	// 		(*weightPtr)[0][i][j] += (*deltaPtr)[0][i][j];
-	// 	}
-	// }
-	
-	
-	//------------------- Configurable Version -----------------
 	double sum;
 	//number of layers, indexs starts from the output layer to the first hidden layer
 	for (int nLayers = (numOfNeurons.size()-1); nLayers > 0; nLayers--){
@@ -350,8 +359,8 @@ void Ann::trainReport(int sample, int nIterations, double error){
 	report << "Sample " << sample+1 << ":		No. iterations:		" << nIterations << ".		Error = " << error << std::endl;
 }
 
-void Ann::writeWeight(std::string file_name) {
-    std::ofstream file(file_name.c_str(), std::ios::out);
+void Ann::writeWeight() {
+    std::ofstream file(weight_data.c_str(), std::ios::out);
 	
 	for (int i = 0; i < (*weightPtr).size(); i++){
 		for (int j = 0; j < (*weightPtr)[i].size(); j++){
@@ -370,6 +379,7 @@ void Ann::summary() {
 	std::cout << "*********** Training Neural Network **************" << std::endl;
 	std::cout << "**************************************************" << std::endl;
 	std::cout << std::endl;
+	std::cout << "Database:			MNIST" << std::endl;
 	std::cout << "Debug Mode:		";
 	if(DEBUG_MODE)
 		std::cout << "On" << std::endl;
@@ -395,8 +405,8 @@ void Ann::summary() {
     getchar();
 }
 
-void Ann::loadWeight(std::string data){
-	std::ifstream file(data.c_str(), std::ios::in);
+void Ann::loadWeight(){
+	std::ifstream file(weight_data.c_str(), std::ios::in);
 	for (int i = 0; i < (*weightPtr).size(); i++){
 		for (int j = 0; j < (*weightPtr)[i].size(); j++){
 			for (int k = 0; k < (*weightPtr)[i][j].size(); k++){

@@ -23,20 +23,6 @@
 #define BPDEBUG		false				//for backPropagationk debugging
 #define	TDEBUG		false				//for neural network test debugging
 
-// Training image file name
-const std::string train_image = "mnist/train-images-idx3-ubyte";
-// Training label file name
-const std::string train_label = "mnist/train-labels-idx1-ubyte";
-// Number of training samples
-const int trainSize = 60000;
-
-// Testing image file name
-const std::string test_image = "mnist/t10k-images-idx3-ubyte";
-// Testing label file name
-const std::string test_label = "mnist/t10k-labels-idx1-ubyte";
-// Number of testing samples
-const int testSize = 10000; 
-
 // Weights file name
 const std::string weight_data = "weight_data.dat";
 // Report file name
@@ -44,10 +30,19 @@ const std::string train_report = "training-report.dat";
 const std::string test_report = "testing-report.dat";
 const std::string debug_report = "debug-report.dat";
 
+std::vector<int> readConfig(std::string fileName);
+
 enum ActType{
 	sigmoidFunct,	//0
 	stepFunct,		//1
 	reluFunct		//2
+};
+
+enum DataSet{
+	MNIST,
+	EMNIST,
+	CIFAR10,
+	CIFAR100
 };
 
 class Ann{
@@ -63,6 +58,19 @@ class Ann{
 	int numOfLayers;	//total number of layers, include input layer
 	//number of neuron for each layer, vector size based on number of layers
 	std::vector<int> numOfNeurons;
+	
+	// Training image file name
+	std::string train_image;
+	// Training label file name
+	std::string train_label;
+	// Number of training samples
+	int trainSize;
+	// Testing image file name
+	std::string test_image;
+	// Testing label file name
+	std::string test_label;
+	// Number of testing samples
+	int testSize;
 	
 	//set default value in constructor
 	int epochs;
@@ -111,10 +119,14 @@ class Ann{
 		//choose an activation function
 		double activation(ActType actType, double input);
 		
+		int getTrainSize();
+		int getTestSize();
+		
 		std::vector<double>* getInputPtr();
 		std::vector<double>* getOutputPtr();
 		std::vector<std::vector<std::vector<double> > >* getWeightPtr();
 		
+		void chooseDataset(DataSet data);
 		void readHeader();						//get rid of header from image file (for MNIST)
 		void initAnn();							//set vectors size, assign randomized weight with range(-1,1)
 		void loadInput();						//read input (print is disabled by default)
@@ -123,11 +135,11 @@ class Ann{
 		int learning();							//calls feedfwd & backpropa for n times
 		double squareError();					//return error
 		void trainReport(int sample, int nIterations, double error);
-		void writeWeight(std::string file_name);//update weight for each iteration
+		void writeWeight();						//update weight for each iteration
 		void summary();							//print basic network information
 		
 		//Function for Testing
-		void loadWeight(std::string data);		//load trained weight for testing
+		void loadWeight();		//load trained weight for testing
 		bool prediction(int sampleInd);			//
 		void testReport(int nCorrect, double accuracy);	//write report
 };
@@ -137,7 +149,6 @@ Ann::Ann(ActType act, int layers, std::vector<int> neurons, bool train){
 	actType = act;
 	training = train;
 	inputPtr = &inputVector;
-	//inputPtr = (std::vector<double>*) malloc(inputVector.size()+1);
 	outputPtr = &outputVector;
 	weightPtr = &weight;
 	deltaPtr = &delta;
@@ -154,16 +165,6 @@ Ann::Ann(ActType act, int layers, std::vector<int> neurons, bool train){
 	epsilon = 1e-3;
 	
 	debugReport.open(debug_report.c_str(), std::ios::out);
-	if(training){
-		report.open(train_report.c_str(), std::ios::out);
-		image.open(train_image.c_str(), std::ios::in | std::ios::binary); // Binary image file
-		label.open(train_label.c_str(), std::ios::in | std::ios::binary); // Binary label file
-	}
-	else{
-		report.open(test_report.c_str(), std::ios::out);
-		image.open(test_image.c_str(), std::ios::in | std::ios::binary); // Binary image file
-		label.open(test_label.c_str(), std::ios::in | std::ios::binary); // Binary label file	
-	}
 }
 
 //destructor

@@ -1,24 +1,34 @@
 #include "ann.h"
 
 int main(){
-    //default network size, should be stored in a training file
+    DataSet dataset = MNIST;
+    std::string configFile = "config.dat";
+    
     bool training = false;
-    int numOfLayers = 3;
+    std::vector<int> configValue;
+    int numOfLayers;
     std::vector<int> numOfNeurons;
-    numOfNeurons.resize(numOfLayers);
-    numOfNeurons[0] = IN_SIZE;
-    numOfNeurons[1] = HL_SIZE;
-    numOfNeurons[2] = OUT_SIZE;
+    configValue = readConfig(configFile);
+    
+    for (int i = 0; i < configValue.size(); i++){
+        if (i == 0)
+            numOfLayers = configValue[i];
+        else
+            numOfNeurons.push_back(configValue[i]);
+    }
     
     Ann testing_nn (sigmoidFunct, numOfLayers, numOfNeurons, training);
+    testing_nn.chooseDataset(dataset);
+    testing_nn.initAnn();
     testing_nn.summary();           //print basic network information
 	testing_nn.readHeader();        //get rid of header from image file (for MNIST)
-	testing_nn.initAnn();
-    testing_nn.loadWeight(weight_data);
+    testing_nn.loadWeight();
 	
 	int nCorrect = 0;		//number of correct prediction
 	bool result;
-    for (int sample = 0; sample < testSize; sample++) {
+	int SampleSize = testing_nn.getTestSize();
+	std::cout << "Testing:  " << SampleSize << std::endl;
+    for (int sample = 0; sample < SampleSize; sample++) {
         std::cout << "Sample " << sample+1 << std::endl;
 	    testing_nn.loadInput();
 	    testing_nn.feedForward();
@@ -27,9 +37,9 @@ int main(){
 	        nCorrect++;
     }
     //Summary
-    float accuracy = (float)(nCorrect) / (float)testSize * 100.0;
+    float accuracy = (float)(nCorrect) / (float)SampleSize * 100.0;
     std::cout << "========= Summary ===========" << std::endl;
-    std::cout << "Correctness:	" << nCorrect << "/" << testSize << std::endl;
+    std::cout << "Correctness:	" << nCorrect << "/" << SampleSize << std::endl;
     std::cout << "Accuracy:	" << accuracy << std::endl;
     testing_nn.testReport(nCorrect, accuracy);
     std::cout << "========= Summary ===========" << std::endl;
