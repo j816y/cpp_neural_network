@@ -376,7 +376,7 @@ void Ann::writeWeight() {
 void Ann::summary() {
 	// Details
 	std::cout << "**************************************************" << std::endl;
-	std::cout << "*********** Training Neural Network **************" << std::endl;
+	std::cout << "********** Neural Network Information ************" << std::endl;
 	std::cout << "**************************************************" << std::endl;
 	std::cout << std::endl;
 	std::cout << "Database:			MNIST" << std::endl;

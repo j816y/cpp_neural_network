@@ -1,22 +1,17 @@
 #include "ann.h"
 
-int main(){
-    //======================Set Network Size=============================
-    std::ofstream config;       //store network size for testing purpose
-    const std::string config_file = "config.dat";
+bool training = true;
+//======================Set Network Size=============================
+std::ofstream config;       //store network size for testing purpose
+std::string config_file = "config.dat";
+DataSet dataset = MNIST;
+int numOfLayers;
+std::vector<int> numOfNeurons;
+
+//User Interface for network setting
+void networkConstruction(){
     std::string defaultSetting;
     int userInput;
-    bool training = true;
-    int numOfLayers;
-    std::vector<int> numOfNeurons;
-    DataSet dataset = MNIST;
-    
-    //default is a neural network with single hidden layer and 128 neurons
-    numOfLayers = 3;
-    numOfNeurons.resize(numOfLayers);
-    numOfNeurons[0] = IN_SIZE;
-    numOfNeurons[1] = HL_SIZE;
-    numOfNeurons[2] = OUT_SIZE;
     
     std::cout << "**************************************************" << std::endl;
     std::cout << "**************** Default Setting *****************" << std::endl;
@@ -49,7 +44,18 @@ int main(){
     for (int i = 0; i < numOfNeurons.size(); i++)
         config << numOfNeurons[i] << std::endl;
     config.close();
+}
+
+int main(){
+    //default setting
+    //single hidden layer and 128 neurons
+    numOfLayers = 3;
+    numOfNeurons.resize(numOfLayers);
+    numOfNeurons[0] = IN_SIZE;
+    numOfNeurons[1] = HL_SIZE;
+    numOfNeurons[2] = OUT_SIZE;
     
+    networkConstruction();
     //============Create Network====================
 	Ann training_nn(sigmoidFunct, numOfLayers, numOfNeurons, training);
     //Ann training_nn (reluFunct, numOfLayers, numOfNeurons, training);
@@ -73,13 +79,11 @@ int main(){
         training_nn.trainReport(sample, nIterations, error);
         
         // Save the current weight matrix every 100 samples
-        // In case of termination
         if (sample != 0 && sample % 100 == 0) {
             std::cout << "Saving weight matrix.\n";
             training_nn.writeWeight();
         }
     }
-    //save final network
     training_nn.writeWeight();
     std::cout << "Training Completed.\n";
     return 0;
