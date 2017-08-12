@@ -310,7 +310,9 @@ void Ann::backPropagation(){
 				if(BPDEBUG){
 					std::cout << "(*deltaPtr)[" << nLayers-1 << "][" << numOut << "][" << numIn << "] = (learningRate * (*thetaPtr)[" << nLayers-1 << "][" << numOut << "] * layerOut[" << numIn << "]) + (momentum * (*deltaPtr)[" << nLayers-1 << "][" << numOut << "][" << numIn << "]);\n";
 					std::cout << "(*weightPtr)[" << nLayers-1 << "][" << numOut << "][" << numIn << "] += (*deltaPtr)[" << nLayers-1 << "][" << numOut << "][" << numIn << "];\n";
-					}
+				}
+				//delta_w[i][j] = rate*theta*output + momentum * previous_delta_w[i][j]
+				//What is momentum? https://www.willamette.edu/~gorr/classes/cs449/momrate.html
 				(*deltaPtr)[nLayers-1][numOut][numIn] = (learningRate * (*thetaPtr)[nLayers-1][numOut] * layerOut[nLayers-1][numIn]) + (momentum * (*deltaPtr)[nLayers-1][numOut][numIn]);
 				(*weightPtr)[nLayers-1][numOut][numIn] += (*deltaPtr)[nLayers-1][numOut][numIn];
 			}
