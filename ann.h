@@ -17,7 +17,7 @@
 #define HEIGHT		28
 #define IN_SIZE		WIDTH*HEIGHT+BIAS	//Input Size Default
 #define OUT_SIZE	10					//Output Size Default
-#define	HL_SIZE		100					//Hidden Layer Size Default
+#define	HL_SIZE		64					//Hidden Layer Size Default
 #define DEBUG_MODE	false				//general debug mode for init and load input
 #define FFDEBUG		false				//for feedfwd debugging report generation
 #define BPDEBUG		false				//for backPropagationk debugging
@@ -160,9 +160,9 @@ Ann::Ann(ActType act, int layers, std::vector<int> neurons, bool train){
 	//default value
 	binInput = true;
 	epochs = 512;
-	learningRate = 0.1;
+	learningRate = 0.01;
 	momentum = 0.9;
-	epsilon = 1e-3;
+	epsilon = 1e-4;
 	
 	debugReport.open(debug_report.c_str(), std::ios::out);
 }
